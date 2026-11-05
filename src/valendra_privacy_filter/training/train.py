@@ -16,6 +16,7 @@ from valendra_privacy_filter.evaluation.metrics import _metrics
 from valendra_privacy_filter.datasets.prepare import verify_dataset
 from valendra_privacy_filter.models import PrivacyFilterModel
 from valendra_privacy_filter.models.decode import viterbi_decode
+from valendra_privacy_filter.training.initialization import checkpoint_provenance, load_initial_model, run_identity
 from valendra_privacy_filter.training.smoke import MODEL_ID, MODEL_REVISION
 
 
@@ -162,6 +163,9 @@ def validate_resume_checkpoint(checkpoint, output_dir, identity):
     checkpoint_config = json.loads((checkpoint / "config.json").read_text())
     if checkpoint_config.get("privacy_attention_mode", "causal") != identity["attention_mode"]:
         raise ValueError("Checkpoint attention mode differs from experiment")
+    initialization = identity.get("initialization")
+    if initialization and checkpoint_config.get("privacy_initialization_weights_sha256") != initialization["weights_sha256"]:
+        raise ValueError("Checkpoint initialization does not match the recorded run")
 
 
 def validation_subset(dataset, limit, seed):
@@ -182,7 +186,31 @@ def prioritize_spanish_training(dataset, repeats=1):
     return dataset.select(list(range(len(dataset))) + spanish * (repeats - 1))
 
 
-def train(config, resume_from_checkpoint=None, min_early_stopping_epoch=None):
+def validate_training_manifest(manifest, require_complete_nvidia=False):
+    if manifest.get("group_cross_split_count") != 0:
+        raise ValueError("Dataset group leakage check is absent or failed")
+    if require_complete_nvidia:
+        source = manifest.get("source_parameters", {})
+        source_ids = {item.get("id") for item in manifest.get("sources", [])}
+        counts = manifest.get("splits", {})
+        if ("nvidia/Nemotron-PII" not in source_ids or not source.get("nvidia_train_is_complete")
+                or source.get("sampled_nvidia_holdout", True)
+                or not manifest.get("postwrite_isolation_audit", {}).get("passed")
+                or not counts.get("train", {}).get("sources", {}).get("nemotron")
+                or not counts.get("validation", {}).get("sources", {}).get("nemotron")):
+            raise ValueError("Full NVIDIA data and a passing holdout isolation audit are required")
+
+
+def validate_warmstart_lineage(initialization, manifest):
+    baseline = manifest.get("source_parameters", {}).get("baseline_manifest_sha256")
+    if (not baseline or baseline != initialization.get("source_dataset_manifest_sha256")
+            or not manifest.get("postwrite_isolation_audit", {}).get("passed")):
+        raise ValueError("Target holdouts were not verified against the warm-start source dataset")
+
+
+def train(config, resume_from_checkpoint=None, min_early_stopping_epoch=None, initialize_from_checkpoint=None):
+    if resume_from_checkpoint and initialize_from_checkpoint:
+        raise ValueError("Warm-start initialization and same-phase resume are mutually exclusive")
     if not torch.cuda.is_available() or not torch.cuda.is_bf16_supported():
         raise RuntimeError("Full training requires a CUDA device supporting BF16")
     mode = config.get("attention_mode", "causal")
@@ -193,17 +221,25 @@ def train(config, resume_from_checkpoint=None, min_early_stopping_epoch=None):
     manifest_bytes = manifest_path.read_bytes()
     manifest = verify_dataset(dataset_dir, ["train", "validation"])
     names = manifest["label_names"]
-    if manifest.get("group_cross_split_count") != 0:
-        raise ValueError("Dataset group leakage check is absent or failed")
+    validate_training_manifest(manifest, require_complete_nvidia=bool(config.get("require_complete_nvidia", False)))
+    model_config = AutoConfig.from_pretrained(MODEL_ID, revision=MODEL_REVISION, num_labels=len(names))
+    model_config.id2label = dict(enumerate(names))
+    model_config.label2id = {name: i for i, name in enumerate(names)}
+    model_config.privacy_attention_mode = mode
     output_dir = Path(config["output_dir"])
     output_dir.mkdir(parents=True, exist_ok=True)
-    protocol = {key: value for key, value in config.items() if key not in {"dataset_dir", "output_dir", "attention_mode"}}
-    protocol_hash = hashlib.sha256(json.dumps(protocol, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-    identity = {"attention_mode": mode, "model_id": MODEL_ID, "model_revision": MODEL_REVISION,
-                "dataset_manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
-                "seed": int(config.get("seed", 42)), "protocol_sha256": protocol_hash}
     identity_path = output_dir / "run_identity.json"
-    if identity_path.exists() and json.loads(identity_path.read_text()) != identity:
+    existing_identity = json.loads(identity_path.read_text()) if identity_path.exists() else None
+    if initialize_from_checkpoint and existing_identity:
+        raise ValueError("Existing experiment: use a new output directory for warm-start training")
+    if initialize_from_checkpoint:
+        initialization = checkpoint_provenance(initialize_from_checkpoint, model_config, names, mode)
+    else:
+        initialization = existing_identity.get("initialization") if existing_identity and resume_from_checkpoint else None
+    if initialization:
+        validate_warmstart_lineage(initialization, manifest)
+    identity = run_identity(config, hashlib.sha256(manifest_bytes).hexdigest(), initialization)
+    if existing_identity and existing_identity != identity:
         raise ValueError("Output directory belongs to a different experiment")
     if resume_from_checkpoint:
         validate_resume_checkpoint(resume_from_checkpoint, output_dir, identity)
@@ -230,18 +266,19 @@ def train(config, resume_from_checkpoint=None, min_early_stopping_epoch=None):
                                         identity["seed"])
     training_data = prioritize_spanish_training(data["train"], int(config.get("spanish_train_repeats", 1)))
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, revision=MODEL_REVISION, use_fast=True)
-    model_config = AutoConfig.from_pretrained(MODEL_ID, revision=MODEL_REVISION, num_labels=len(names))
-    model_config.id2label = dict(enumerate(names))
-    model_config.label2id = {name: i for i, name in enumerate(names)}
-    model_config.privacy_attention_mode = mode
     if policy:
         model_config.privacy_continuation_protocol_sha256 = policy["protocol_sha256"]
         model_config.privacy_minimum_stopping_epoch = policy["minimum_epoch"]
     elif config.get("min_early_stopping_epoch") is not None:
         model_config.privacy_minimum_stopping_epoch = float(config["min_early_stopping_epoch"])
-    model = PrivacyFilterModel.from_pretrained(MODEL_ID, revision=MODEL_REVISION, config=model_config,
-                                                torch_dtype=torch.float32, use_safetensors=True,
-                                                attn_implementation="sdpa")
+    if initialization:
+        model_config.privacy_initialization_weights_sha256 = initialization["weights_sha256"]
+    if initialize_from_checkpoint:
+        model = load_initial_model(initialize_from_checkpoint, model_config)
+    else:
+        model = PrivacyFilterModel.from_pretrained(MODEL_ID, revision=MODEL_REVISION, config=model_config,
+                                                    torch_dtype=torch.float32, use_safetensors=True,
+                                                    attn_implementation="sdpa")
     if not all(p.requires_grad and p.dtype == torch.float32 for p in model.parameters()):
         raise RuntimeError("Expected unfrozen FP32 master parameters")
     save_steps = int(config.get("save_steps", 500))

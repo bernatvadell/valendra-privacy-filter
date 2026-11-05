@@ -1,0 +1,67 @@
+schema_version: 1
+common_categories:
+  - PERSON
+  - EMAIL
+  - PHONE
+  - ADDRESS
+  - URL
+  - SECRET
+models:
+  valendra:
+    label_mapping:
+      PERSON: PERSON
+      EMAIL: EMAIL
+      PHONE: PHONE
+      ADDRESS: ADDRESS
+      GOVERNMENT_ID: GOVERNMENT_ID
+      FINANCIAL_ID: FINANCIAL_ID
+      SECRET: SECRET
+      IP_ADDRESS: IP_ADDRESS
+      DATE_OF_BIRTH: DATE_OF_BIRTH
+      URL: URL
+  openai:
+    model_id: openai/privacy-filter
+    model_revision: 7ffa9a043d54d1be65afb281eddf0ffbe629385b
+    runtime_repository: https://github.com/openai/privacy-filter
+    runtime_revision: f7f00ca7fb869683eb732c010299d901457f19c3
+    license: Apache-2.0
+    label_mapping:
+      private_person: PERSON
+      private_email: EMAIL
+      private_phone: PHONE
+      private_address: ADDRESS
+      private_url: URL
+      secret: SECRET
+      private_date: null
+      account_number: null
+  gliner:
+    model_id: nvidia/gliner-PII
+    model_revision: bd23e8ef4425fd04e34c5204ab49ffaa706eae79
+    runtime_version: 0.2.24
+    license: NVIDIA-Open-Model-License
+    threshold: 0.3
+    overlap_words: 32
+    label_mapping:
+      first_name: PERSON
+      last_name: PERSON
+      name: PERSON
+      email: EMAIL
+      phone_number: PHONE
+      street_address: ADDRESS
+      address: ADDRESS
+      url: URL
+      api_key: SECRET
+      password: SECRET
+      http_cookie: SECRET
+      cvv: SECRET
+      pin: SECRET
+      national_id: GOVERNMENT_ID
+      ssn: GOVERNMENT_ID
+      tax_id: GOVERNMENT_ID
+      account_number: FINANCIAL_ID
+      bank_routing_number: FINANCIAL_ID
+      credit_debit_card: FINANCIAL_ID
+      swift_bic: FINANCIAL_ID
+      date_of_birth: DATE_OF_BIRTH
+      ipv4: IP_ADDRESS
+      ipv6: IP_ADDRESS
