@@ -1,0 +1,11 @@
+categories:
+  - PERSON
+  - EMAIL
+  - PHONE
+  - ADDRESS
+  - GOVERNMENT_ID
+  - FINANCIAL_ID
+  - SECRET
+  - IP_ADDRESS
+  - DATE_OF_BIRTH
+  - URL

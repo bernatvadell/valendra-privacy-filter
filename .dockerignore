@@ -1,0 +1,14 @@
+.git
+.venv
+__pycache__
+.pytest_cache
+.ruff_cache
+*.egg-info
+build
+dist
+data/raw
+data/processed*
+experiments/runs
+*.safetensors
+*.ckpt
+.env*
