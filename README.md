@@ -4,6 +4,20 @@ A research pipeline for detecting and redacting PII with token classification, n
 
 **Status:** the pipeline, including both attention modes, has been exercised on a GPU using very small smoke datasets. No useful trained privacy model or evidence of real-world generalization is included. See [measured smoke results](experiments/smoke-results.md) before interpreting any numbers.
 
+## Preliminary comparison
+
+The following development snapshot compares the Valendra checkpoint at step 3,000 with OpenAI Privacy Filter and NVIDIA GLiNER-PII on the same 100 synthetic validation documents. Untyped metrics require exact character-span boundaries; typed-common F1 also requires the correct category among PERSON, EMAIL, PHONE, ADDRESS, URL and SECRET.
+
+| Model | Untyped precision | Untyped recall | Untyped F1 | Typed-common F1 | CPU p50 latency |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Valendra, step 3,000 | 0.867 | 0.926 | 0.895 | 0.860 | 106 ms |
+| OpenAI Privacy Filter | 0.783 | 0.574 | 0.663 | 0.583 | 407 ms |
+| NVIDIA GLiNER-PII | 0.539 | 0.561 | 0.550 | 0.473 | 169 ms |
+
+Untyped F1 for English/Spanish was 0.965/0.696 for Valendra, 0.675/0.627 for OpenAI and 0.624/0.315 for GLiNER. The sample contains 75 English and 25 Spanish documents; 23 of the Spanish documents are project-synthetic. It contains no clean negative documents.
+
+**These are preliminary validation results, not an independent held-out or real-world evaluation.** The checkpoint was selected using validation, and both Valendra and GLiNER were trained on Nemotron-derived data. Models ran sequentially on an Apple M5 CPU: Valendra and GLiNER used FP32, and OpenAI used its native BF16 runtime. Latencies are specific to this CPU and configuration, not GPU results. See the [full comparison](experiments/interim-validation-checkpoint3000.md) and [aggregate report](experiments/interim-validation-checkpoint3000.json) for sampling, model settings and limitations.
+
 ## Requirements and setup
 
 - Python 3.10–3.12, [`uv`](https://docs.astral.sh/uv/) 0.13.6, and a CUDA GPU supporting BF16 for training. CUDA driver and wheel must be compatible with the device.
