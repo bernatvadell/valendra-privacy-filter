@@ -1,0 +1,1039 @@
+{
+  "dataset_manifest_sha256": "9af56087c7655f676c1cb64d214ed2d9d1a5cac78e09aaaee59abd16cd3a0f18",
+  "split": "validation",
+  "documents": 100,
+  "models": {
+    "valendra": {
+      "metadata": {
+        "model": "valendra",
+        "dataset_manifest_sha256": "9af56087c7655f676c1cb64d214ed2d9d1a5cac78e09aaaee59abd16cd3a0f18",
+        "split": "validation",
+        "document_order_sha256": "c1ad37a2b9ddcc62db831248bd0eb6d847dd8f0e9a08c109c72f1696d13e4521",
+        "comparison_config_sha256": "808bf293786e733f809daa21722423c7c35719265e0ff977e809d6730f7873bb",
+        "implementation_sha256": "4cf94a19586c67811e411a011bdfe680e82c1f2c844920dfe2be00ff8080e5f5",
+        "documents": 100,
+        "limit": 100,
+        "sample_seed": 42,
+        "common_categories": [
+          "ADDRESS",
+          "EMAIL",
+          "PERSON",
+          "PHONE",
+          "SECRET",
+          "URL"
+        ],
+        "device": "cpu",
+        "hardware": "arm",
+        "warmup_documents": 2,
+        "batch_size": 1,
+        "scoring": "exact_character_spans_v1",
+        "model_details": {
+          "requested_precision": "fp32",
+          "quantization": "none",
+          "torch_version": "2.8.0",
+          "model_id": "Qwen/Qwen3-0.6B-Base",
+          "weights_sha256": "7fda6b2bf3b44e8acf0351b08de07d76d99f55371e04cc55b7df2aa95408b976",
+          "parameter_dtypes": {
+            "torch.float32": 596091945
+          },
+          "attention_mode": "causal",
+          "max_length": 512,
+          "overlap": 64,
+          "transformers_version": "4.55.4",
+          "span_scores": true,
+          "model_revision": "da87bfb608c14b7cf20ba1ce41287e8de496c0cd",
+          "training_dataset_manifest_sha256": "9af56087c7655f676c1cb64d214ed2d9d1a5cac78e09aaaee59abd16cd3a0f18",
+          "training_protocol_sha256": "3d55cc7f064fc68f3774d2078d8227b946308ffa4c6242412a83874ee898f073",
+          "load_seconds": 2.1971644170116633,
+          "label_mapping": {
+            "PERSON": "PERSON",
+            "EMAIL": "EMAIL",
+            "PHONE": "PHONE",
+            "ADDRESS": "ADDRESS",
+            "GOVERNMENT_ID": "GOVERNMENT_ID",
+            "FINANCIAL_ID": "FINANCIAL_ID",
+            "SECRET": "SECRET",
+            "IP_ADDRESS": "IP_ADDRESS",
+            "DATE_OF_BIRTH": "DATE_OF_BIRTH",
+            "URL": "URL"
+          }
+        }
+      },
+      "metrics": {
+        "documents": 100,
+        "untyped": {
+          "tp": 274,
+          "fp": 42,
+          "fn": 22,
+          "precision": 0.8670886075949367,
+          "recall": 0.9256756756756757,
+          "f1": 0.8954248366013071,
+          "f2": 0.9133333333333333
+        },
+        "typed_common": {
+          "tp": 196,
+          "fp": 42,
+          "fn": 22,
+          "precision": 0.8235294117647058,
+          "recall": 0.8990825688073395,
+          "f1": 0.8596491228070174,
+          "f2": 0.8828828828828829
+        },
+        "common_categories": [
+          "ADDRESS",
+          "EMAIL",
+          "PERSON",
+          "PHONE",
+          "SECRET",
+          "URL"
+        ],
+        "typed_by_category": {
+          "ADDRESS": {
+            "tp": 46,
+            "fp": 28,
+            "fn": 6,
+            "precision": 0.6216216216216216,
+            "recall": 0.8846153846153846,
+            "f1": 0.7301587301587302,
+            "f2": 0.8156028368794326
+          },
+          "EMAIL": {
+            "tp": 24,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "f2": 1.0
+          },
+          "PERSON": {
+            "tp": 67,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1.0,
+            "recall": 0.9852941176470589,
+            "f1": 0.9925925925925926,
+            "f2": 0.9882005899705015
+          },
+          "PHONE": {
+            "tp": 29,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "f2": 1.0
+          },
+          "SECRET": {
+            "tp": 22,
+            "fp": 7,
+            "fn": 1,
+            "precision": 0.7586206896551724,
+            "recall": 0.9565217391304348,
+            "f1": 0.8461538461538461,
+            "f2": 0.9090909090909092
+          },
+          "URL": {
+            "tp": 8,
+            "fp": 7,
+            "fn": 14,
+            "precision": 0.5333333333333333,
+            "recall": 0.36363636363636365,
+            "f1": 0.43243243243243246,
+            "f2": 0.3883495145631068
+          }
+        },
+        "untyped_recall_by_gold_category": {
+          "ADDRESS": {
+            "matched": 46,
+            "total": 52,
+            "recall": 0.8846153846153846
+          },
+          "DATE_OF_BIRTH": {
+            "matched": 4,
+            "total": 4,
+            "recall": 1.0
+          },
+          "EMAIL": {
+            "matched": 24,
+            "total": 24,
+            "recall": 1.0
+          },
+          "FINANCIAL_ID": {
+            "matched": 23,
+            "total": 23,
+            "recall": 1.0
+          },
+          "GOVERNMENT_ID": {
+            "matched": 43,
+            "total": 43,
+            "recall": 1.0
+          },
+          "IP_ADDRESS": {
+            "matched": 8,
+            "total": 8,
+            "recall": 1.0
+          },
+          "PERSON": {
+            "matched": 67,
+            "total": 68,
+            "recall": 0.9852941176470589
+          },
+          "PHONE": {
+            "matched": 29,
+            "total": 29,
+            "recall": 1.0
+          },
+          "SECRET": {
+            "matched": 22,
+            "total": 23,
+            "recall": 0.9565217391304348
+          },
+          "URL": {
+            "matched": 8,
+            "total": 22,
+            "recall": 0.36363636363636365
+          }
+        },
+        "by_language": {
+          "en": {
+            "untyped": {
+              "tp": 219,
+              "fp": 7,
+              "fn": 9,
+              "precision": 0.9690265486725663,
+              "recall": 0.9605263157894737,
+              "f1": 0.9647577092511014,
+              "f2": 0.962214411247803
+            },
+            "typed_common": {
+              "tp": 170,
+              "fp": 7,
+              "fn": 9,
+              "precision": 0.96045197740113,
+              "recall": 0.9497206703910615,
+              "f1": 0.9550561797752809,
+              "f2": 0.951847704367301
+            }
+          },
+          "es": {
+            "untyped": {
+              "tp": 55,
+              "fp": 35,
+              "fn": 13,
+              "precision": 0.6111111111111112,
+              "recall": 0.8088235294117647,
+              "f1": 0.6962025316455697,
+              "f2": 0.7596685082872928
+            },
+            "typed_common": {
+              "tp": 26,
+              "fp": 35,
+              "fn": 13,
+              "precision": 0.4262295081967213,
+              "recall": 0.6666666666666666,
+              "f1": 0.52,
+              "f2": 0.5990783410138248
+            }
+          }
+        },
+        "by_source": {
+          "nemotron": {
+            "untyped": {
+              "tp": 80,
+              "fp": 0,
+              "fn": 2,
+              "precision": 1.0,
+              "recall": 0.975609756097561,
+              "f1": 0.9876543209876543,
+              "f2": 0.9803921568627451
+            },
+            "typed_common": {
+              "tp": 67,
+              "fp": 0,
+              "fn": 2,
+              "precision": 1.0,
+              "recall": 0.9710144927536232,
+              "f1": 0.9852941176470589,
+              "f2": 0.9766763848396502
+            }
+          },
+          "openpii": {
+            "untyped": {
+              "tp": 98,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "f2": 1.0
+            },
+            "typed_common": {
+              "tp": 72,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "f2": 1.0
+            }
+          },
+          "synthetic": {
+            "untyped": {
+              "tp": 96,
+              "fp": 42,
+              "fn": 20,
+              "precision": 0.6956521739130435,
+              "recall": 0.8275862068965517,
+              "f1": 0.7559055118110236,
+              "f2": 0.7973421926910299
+            },
+            "typed_common": {
+              "tp": 57,
+              "fp": 42,
+              "fn": 20,
+              "precision": 0.5757575757575758,
+              "recall": 0.7402597402597403,
+              "f1": 0.6477272727272728,
+              "f2": 0.7002457002457003
+            }
+          }
+        },
+        "typed_excluded_gold": {
+          "FINANCIAL_ID": 23,
+          "GOVERNMENT_ID": 43,
+          "IP_ADDRESS": 8,
+          "DATE_OF_BIRTH": 4
+        },
+        "unmapped_predictions": {},
+        "ignored_predictions": 44,
+        "false_positives_per_document": 0.42,
+        "negative_documents": {
+          "count": 0,
+          "with_false_positive": 0,
+          "false_positive_rate": 0.0
+        }
+      },
+      "performance": {
+        "latency_ms": {
+          "p50": 105.84460449172184,
+          "p95": 331.9588255602866,
+          "p99": 409.64369560359285
+        },
+        "documents_per_second": 6.986386697038191,
+        "characters_per_second": 2440.694192610292,
+        "input_tokens_per_second": 668.4574791726141,
+        "input_tokens": 9568,
+        "input_token_definition": "model tokenizer on original text; excludes prompt and repeated windows",
+        "inference_seconds": 14.313550671678968,
+        "end_to_end_seconds": 14.726341209025122,
+        "sampled_peak_rss_bytes": 2600337408,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "cpu_process_percent_one_core": 131.86558554068384
+      }
+    },
+    "openai": {
+      "metadata": {
+        "model": "openai",
+        "dataset_manifest_sha256": "9af56087c7655f676c1cb64d214ed2d9d1a5cac78e09aaaee59abd16cd3a0f18",
+        "split": "validation",
+        "document_order_sha256": "c1ad37a2b9ddcc62db831248bd0eb6d847dd8f0e9a08c109c72f1696d13e4521",
+        "comparison_config_sha256": "808bf293786e733f809daa21722423c7c35719265e0ff977e809d6730f7873bb",
+        "implementation_sha256": "4cf94a19586c67811e411a011bdfe680e82c1f2c844920dfe2be00ff8080e5f5",
+        "documents": 100,
+        "limit": 100,
+        "sample_seed": 42,
+        "common_categories": [
+          "ADDRESS",
+          "EMAIL",
+          "PERSON",
+          "PHONE",
+          "SECRET",
+          "URL"
+        ],
+        "device": "cpu",
+        "hardware": "arm",
+        "warmup_documents": 2,
+        "batch_size": 1,
+        "scoring": "exact_character_spans_v1",
+        "model_details": {
+          "requested_precision": "native",
+          "quantization": "none",
+          "torch_version": "2.8.0",
+          "model_id": "openai/privacy-filter",
+          "model_revision": "7ffa9a043d54d1be65afb281eddf0ffbe629385b",
+          "runtime_revision": "f7f00ca7fb869683eb732c010299d901457f19c3",
+          "license": "Apache-2.0",
+          "weights_sha256": "9c262cbe68a0c8a50590a648ef8341a2b7d3be1fa11dfb79893fe0b03ce57b5c",
+          "parameter_dtypes": {
+            "torch.bfloat16": 1399475840,
+            "torch.float32": 10992
+          },
+          "runtime_context_window": 4096,
+          "decode_mode": "viterbi",
+          "calibration_sha256": "bbc8611ef08a55ed72d64856cbbbb9a91db8dfa881f0a92e2afbad6e4bbc775a",
+          "span_scores": false,
+          "opf_version": "0.1.0",
+          "tiktoken_version": "0.11.0",
+          "load_seconds": 5.747232457972132,
+          "label_mapping": {
+            "private_person": "PERSON",
+            "private_email": "EMAIL",
+            "private_phone": "PHONE",
+            "private_address": "ADDRESS",
+            "private_url": "URL",
+            "secret": "SECRET",
+            "private_date": null,
+            "account_number": null
+          }
+        }
+      },
+      "metrics": {
+        "documents": 100,
+        "untyped": {
+          "tp": 170,
+          "fp": 47,
+          "fn": 126,
+          "precision": 0.783410138248848,
+          "recall": 0.5743243243243243,
+          "f1": 0.6627680311890838,
+          "f2": 0.6067094932191293
+        },
+        "typed_common": {
+          "tp": 112,
+          "fp": 54,
+          "fn": 106,
+          "precision": 0.6746987951807228,
+          "recall": 0.5137614678899083,
+          "f1": 0.5833333333333333,
+          "f2": 0.5394990366088632
+        },
+        "common_categories": [
+          "ADDRESS",
+          "EMAIL",
+          "PERSON",
+          "PHONE",
+          "SECRET",
+          "URL"
+        ],
+        "typed_by_category": {
+          "ADDRESS": {
+            "tp": 9,
+            "fp": 20,
+            "fn": 43,
+            "precision": 0.3103448275862069,
+            "recall": 0.17307692307692307,
+            "f1": 0.2222222222222222,
+            "f2": 0.18987341772151897
+          },
+          "EMAIL": {
+            "tp": 22,
+            "fp": 0,
+            "fn": 2,
+            "precision": 1.0,
+            "recall": 0.9166666666666666,
+            "f1": 0.9565217391304348,
+            "f2": 0.9322033898305083
+          },
+          "PERSON": {
+            "tp": 47,
+            "fp": 5,
+            "fn": 21,
+            "precision": 0.9038461538461539,
+            "recall": 0.6911764705882353,
+            "f1": 0.7833333333333333,
+            "f2": 0.7253086419753086
+          },
+          "PHONE": {
+            "tp": 19,
+            "fp": 1,
+            "fn": 10,
+            "precision": 0.95,
+            "recall": 0.6551724137931034,
+            "f1": 0.7755102040816326,
+            "f2": 0.6985294117647058
+          },
+          "SECRET": {
+            "tp": 12,
+            "fp": 8,
+            "fn": 11,
+            "precision": 0.6,
+            "recall": 0.5217391304347826,
+            "f1": 0.5581395348837209,
+            "f2": 0.5357142857142857
+          },
+          "URL": {
+            "tp": 3,
+            "fp": 20,
+            "fn": 19,
+            "precision": 0.13043478260869565,
+            "recall": 0.13636363636363635,
+            "f1": 0.1333333333333333,
+            "f2": 0.13513513513513514
+          }
+        },
+        "untyped_recall_by_gold_category": {
+          "ADDRESS": {
+            "matched": 10,
+            "total": 52,
+            "recall": 0.19230769230769232
+          },
+          "DATE_OF_BIRTH": {
+            "matched": 3,
+            "total": 4,
+            "recall": 0.75
+          },
+          "EMAIL": {
+            "matched": 22,
+            "total": 24,
+            "recall": 0.9166666666666666
+          },
+          "FINANCIAL_ID": {
+            "matched": 15,
+            "total": 23,
+            "recall": 0.6521739130434783
+          },
+          "GOVERNMENT_ID": {
+            "matched": 31,
+            "total": 43,
+            "recall": 0.7209302325581395
+          },
+          "IP_ADDRESS": {
+            "matched": 8,
+            "total": 8,
+            "recall": 1.0
+          },
+          "PERSON": {
+            "matched": 47,
+            "total": 68,
+            "recall": 0.6911764705882353
+          },
+          "PHONE": {
+            "matched": 19,
+            "total": 29,
+            "recall": 0.6551724137931034
+          },
+          "SECRET": {
+            "matched": 12,
+            "total": 23,
+            "recall": 0.5217391304347826
+          },
+          "URL": {
+            "matched": 3,
+            "total": 22,
+            "recall": 0.13636363636363635
+          }
+        },
+        "by_language": {
+          "en": {
+            "untyped": {
+              "tp": 128,
+              "fp": 23,
+              "fn": 100,
+              "precision": 0.847682119205298,
+              "recall": 0.5614035087719298,
+              "f1": 0.6754617414248022,
+              "f2": 0.6020696142991534
+            },
+            "typed_common": {
+              "tp": 86,
+              "fp": 35,
+              "fn": 93,
+              "precision": 0.7107438016528925,
+              "recall": 0.48044692737430167,
+              "f1": 0.5733333333333334,
+              "f2": 0.5137395459976105
+            }
+          },
+          "es": {
+            "untyped": {
+              "tp": 42,
+              "fp": 24,
+              "fn": 26,
+              "precision": 0.6363636363636364,
+              "recall": 0.6176470588235294,
+              "f1": 0.6268656716417911,
+              "f2": 0.6213017751479291
+            },
+            "typed_common": {
+              "tp": 26,
+              "fp": 19,
+              "fn": 13,
+              "precision": 0.5777777777777777,
+              "recall": 0.6666666666666666,
+              "f1": 0.619047619047619,
+              "f2": 0.6467661691542288
+            }
+          }
+        },
+        "by_source": {
+          "nemotron": {
+            "untyped": {
+              "tp": 44,
+              "fp": 3,
+              "fn": 38,
+              "precision": 0.9361702127659575,
+              "recall": 0.5365853658536586,
+              "f1": 0.6821705426356589,
+              "f2": 0.5866666666666667
+            },
+            "typed_common": {
+              "tp": 35,
+              "fp": 4,
+              "fn": 34,
+              "precision": 0.8974358974358975,
+              "recall": 0.5072463768115942,
+              "f1": 0.6481481481481483,
+              "f2": 0.5555555555555556
+            }
+          },
+          "openpii": {
+            "untyped": {
+              "tp": 50,
+              "fp": 5,
+              "fn": 48,
+              "precision": 0.9090909090909091,
+              "recall": 0.5102040816326531,
+              "f1": 0.6535947712418301,
+              "f2": 0.5592841163310962
+            },
+            "typed_common": {
+              "tp": 27,
+              "fp": 9,
+              "fn": 45,
+              "precision": 0.75,
+              "recall": 0.375,
+              "f1": 0.5,
+              "f2": 0.4166666666666667
+            }
+          },
+          "synthetic": {
+            "untyped": {
+              "tp": 76,
+              "fp": 39,
+              "fn": 40,
+              "precision": 0.6608695652173913,
+              "recall": 0.6551724137931034,
+              "f1": 0.6580086580086579,
+              "f2": 0.6563039723661485
+            },
+            "typed_common": {
+              "tp": 50,
+              "fp": 41,
+              "fn": 27,
+              "precision": 0.5494505494505495,
+              "recall": 0.6493506493506493,
+              "f1": 0.5952380952380952,
+              "f2": 0.6265664160401002
+            }
+          }
+        },
+        "typed_excluded_gold": {
+          "FINANCIAL_ID": 23,
+          "GOVERNMENT_ID": 43,
+          "IP_ADDRESS": 8,
+          "DATE_OF_BIRTH": 4
+        },
+        "unmapped_predictions": {
+          "account_number": 48,
+          "private_date": 3
+        },
+        "ignored_predictions": 61,
+        "false_positives_per_document": 0.47,
+        "negative_documents": {
+          "count": 0,
+          "with_false_positive": 0,
+          "false_positive_rate": 0.0
+        }
+      },
+      "performance": {
+        "latency_ms": {
+          "p50": 407.39893744466826,
+          "p95": 2558.1036940217004,
+          "p99": 3263.1561327423137
+        },
+        "documents_per_second": 1.266981787694284,
+        "characters_per_second": 442.62008753099815,
+        "input_tokens_per_second": 103.38571387585358,
+        "input_tokens": 8160,
+        "input_token_definition": "model tokenizer on original text; excludes prompt and repeated windows",
+        "inference_seconds": 78.92773279873654,
+        "end_to_end_seconds": 79.29327445896342,
+        "sampled_peak_rss_bytes": 4085317632,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "cpu_process_percent_one_core": 256.073173269044
+      }
+    },
+    "gliner": {
+      "metadata": {
+        "model": "gliner",
+        "dataset_manifest_sha256": "9af56087c7655f676c1cb64d214ed2d9d1a5cac78e09aaaee59abd16cd3a0f18",
+        "split": "validation",
+        "document_order_sha256": "c1ad37a2b9ddcc62db831248bd0eb6d847dd8f0e9a08c109c72f1696d13e4521",
+        "comparison_config_sha256": "808bf293786e733f809daa21722423c7c35719265e0ff977e809d6730f7873bb",
+        "implementation_sha256": "4cf94a19586c67811e411a011bdfe680e82c1f2c844920dfe2be00ff8080e5f5",
+        "documents": 100,
+        "limit": 100,
+        "sample_seed": 42,
+        "common_categories": [
+          "ADDRESS",
+          "EMAIL",
+          "PERSON",
+          "PHONE",
+          "SECRET",
+          "URL"
+        ],
+        "device": "cpu",
+        "hardware": "arm",
+        "warmup_documents": 2,
+        "batch_size": 1,
+        "scoring": "exact_character_spans_v1",
+        "model_details": {
+          "requested_precision": "fp32",
+          "quantization": "none",
+          "torch_version": "2.8.0",
+          "model_id": "nvidia/gliner-PII",
+          "model_revision": "bd23e8ef4425fd04e34c5204ab49ffaa706eae79",
+          "license": "NVIDIA-Open-Model-License",
+          "weights_sha256": "a4dfd0dcbd718acc86dca65fa99f1097d2796c8d7a681e1bc42f40f946c03802",
+          "parameter_dtypes": {
+            "torch.float32": 445463040
+          },
+          "gliner_version": "0.2.24",
+          "transformers_version": "4.57.3",
+          "label_prompts": [
+            "first_name",
+            "last_name",
+            "name",
+            "email",
+            "phone_number",
+            "street_address",
+            "address",
+            "url",
+            "api_key",
+            "password",
+            "http_cookie",
+            "cvv",
+            "pin",
+            "national_id",
+            "ssn",
+            "tax_id",
+            "account_number",
+            "bank_routing_number",
+            "credit_debit_card",
+            "swift_bic",
+            "date_of_birth",
+            "ipv4",
+            "ipv6"
+          ],
+          "threshold": 0.3,
+          "overlap_words": 32,
+          "max_words": 384,
+          "max_encoder_tokens": 512,
+          "span_scores": true,
+          "load_seconds": 7.115696666995063,
+          "label_mapping": {
+            "first_name": "PERSON",
+            "last_name": "PERSON",
+            "name": "PERSON",
+            "email": "EMAIL",
+            "phone_number": "PHONE",
+            "street_address": "ADDRESS",
+            "address": "ADDRESS",
+            "url": "URL",
+            "api_key": "SECRET",
+            "password": "SECRET",
+            "http_cookie": "SECRET",
+            "cvv": "SECRET",
+            "pin": "SECRET",
+            "national_id": "GOVERNMENT_ID",
+            "ssn": "GOVERNMENT_ID",
+            "tax_id": "GOVERNMENT_ID",
+            "account_number": "FINANCIAL_ID",
+            "bank_routing_number": "FINANCIAL_ID",
+            "credit_debit_card": "FINANCIAL_ID",
+            "swift_bic": "FINANCIAL_ID",
+            "date_of_birth": "DATE_OF_BIRTH",
+            "ipv4": "IP_ADDRESS",
+            "ipv6": "IP_ADDRESS"
+          }
+        }
+      },
+      "metrics": {
+        "documents": 100,
+        "untyped": {
+          "tp": 166,
+          "fp": 142,
+          "fn": 130,
+          "precision": 0.538961038961039,
+          "recall": 0.5608108108108109,
+          "f1": 0.5496688741721855,
+          "f2": 0.5563002680965148
+        },
+        "typed_common": {
+          "tp": 110,
+          "fp": 137,
+          "fn": 108,
+          "precision": 0.44534412955465585,
+          "recall": 0.5045871559633027,
+          "f1": 0.4731182795698925,
+          "f2": 0.4915102770330652
+        },
+        "common_categories": [
+          "ADDRESS",
+          "EMAIL",
+          "PERSON",
+          "PHONE",
+          "SECRET",
+          "URL"
+        ],
+        "typed_by_category": {
+          "ADDRESS": {
+            "tp": 8,
+            "fp": 13,
+            "fn": 44,
+            "precision": 0.38095238095238093,
+            "recall": 0.15384615384615385,
+            "f1": 0.21917808219178084,
+            "f2": 0.17467248908296945
+          },
+          "EMAIL": {
+            "tp": 23,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1.0,
+            "recall": 0.9583333333333334,
+            "f1": 0.9787234042553191,
+            "f2": 0.9663865546218489
+          },
+          "PERSON": {
+            "tp": 17,
+            "fp": 119,
+            "fn": 51,
+            "precision": 0.125,
+            "recall": 0.25,
+            "f1": 0.16666666666666666,
+            "f2": 0.20833333333333334
+          },
+          "PHONE": {
+            "tp": 29,
+            "fp": 1,
+            "fn": 0,
+            "precision": 0.9666666666666667,
+            "recall": 1.0,
+            "f1": 0.983050847457627,
+            "f2": 0.9931506849315067
+          },
+          "SECRET": {
+            "tp": 22,
+            "fp": 4,
+            "fn": 1,
+            "precision": 0.8461538461538461,
+            "recall": 0.9565217391304348,
+            "f1": 0.8979591836734695,
+            "f2": 0.9322033898305085
+          },
+          "URL": {
+            "tp": 11,
+            "fp": 0,
+            "fn": 11,
+            "precision": 1.0,
+            "recall": 0.5,
+            "f1": 0.6666666666666666,
+            "f2": 0.5555555555555556
+          }
+        },
+        "untyped_recall_by_gold_category": {
+          "ADDRESS": {
+            "matched": 11,
+            "total": 52,
+            "recall": 0.21153846153846154
+          },
+          "DATE_OF_BIRTH": {
+            "matched": 4,
+            "total": 4,
+            "recall": 1.0
+          },
+          "EMAIL": {
+            "matched": 23,
+            "total": 24,
+            "recall": 0.9583333333333334
+          },
+          "FINANCIAL_ID": {
+            "matched": 22,
+            "total": 23,
+            "recall": 0.9565217391304348
+          },
+          "GOVERNMENT_ID": {
+            "matched": 25,
+            "total": 43,
+            "recall": 0.5813953488372093
+          },
+          "IP_ADDRESS": {
+            "matched": 1,
+            "total": 8,
+            "recall": 0.125
+          },
+          "PERSON": {
+            "matched": 17,
+            "total": 68,
+            "recall": 0.25
+          },
+          "PHONE": {
+            "matched": 29,
+            "total": 29,
+            "recall": 1.0
+          },
+          "SECRET": {
+            "matched": 23,
+            "total": 23,
+            "recall": 1.0
+          },
+          "URL": {
+            "matched": 11,
+            "total": 22,
+            "recall": 0.5
+          }
+        },
+        "by_language": {
+          "en": {
+            "untyped": {
+              "tp": 143,
+              "fp": 87,
+              "fn": 85,
+              "precision": 0.6217391304347826,
+              "recall": 0.6271929824561403,
+              "f1": 0.6244541484716157,
+              "f2": 0.6260945709281962
+            },
+            "typed_common": {
+              "tp": 101,
+              "fp": 90,
+              "fn": 78,
+              "precision": 0.5287958115183246,
+              "recall": 0.5642458100558659,
+              "f1": 0.5459459459459459,
+              "f2": 0.5567805953693494
+            }
+          },
+          "es": {
+            "untyped": {
+              "tp": 23,
+              "fp": 55,
+              "fn": 45,
+              "precision": 0.2948717948717949,
+              "recall": 0.3382352941176471,
+              "f1": 0.31506849315068497,
+              "f2": 0.3285714285714286
+            },
+            "typed_common": {
+              "tp": 9,
+              "fp": 47,
+              "fn": 30,
+              "precision": 0.16071428571428573,
+              "recall": 0.23076923076923078,
+              "f1": 0.18947368421052632,
+              "f2": 0.21226415094339623
+            }
+          }
+        },
+        "by_source": {
+          "nemotron": {
+            "untyped": {
+              "tp": 62,
+              "fp": 19,
+              "fn": 20,
+              "precision": 0.7654320987654321,
+              "recall": 0.7560975609756098,
+              "f1": 0.7607361963190185,
+              "f2": 0.7579462102689485
+            },
+            "typed_common": {
+              "tp": 47,
+              "fp": 19,
+              "fn": 22,
+              "precision": 0.7121212121212122,
+              "recall": 0.6811594202898551,
+              "f1": 0.6962962962962962,
+              "f2": 0.6871345029239767
+            }
+          },
+          "openpii": {
+            "untyped": {
+              "tp": 50,
+              "fp": 46,
+              "fn": 48,
+              "precision": 0.5208333333333334,
+              "recall": 0.5102040816326531,
+              "f1": 0.5154639175257733,
+              "f2": 0.5122950819672132
+            },
+            "typed_common": {
+              "tp": 25,
+              "fp": 51,
+              "fn": 47,
+              "precision": 0.32894736842105265,
+              "recall": 0.3472222222222222,
+              "f1": 0.33783783783783783,
+              "f2": 0.3434065934065934
+            }
+          },
+          "synthetic": {
+            "untyped": {
+              "tp": 54,
+              "fp": 77,
+              "fn": 62,
+              "precision": 0.4122137404580153,
+              "recall": 0.46551724137931033,
+              "f1": 0.43724696356275305,
+              "f2": 0.453781512605042
+            },
+            "typed_common": {
+              "tp": 38,
+              "fp": 67,
+              "fn": 39,
+              "precision": 0.3619047619047619,
+              "recall": 0.4935064935064935,
+              "f1": 0.4175824175824176,
+              "f2": 0.4600484261501211
+            }
+          }
+        },
+        "typed_excluded_gold": {
+          "FINANCIAL_ID": 23,
+          "GOVERNMENT_ID": 43,
+          "IP_ADDRESS": 8,
+          "DATE_OF_BIRTH": 4
+        },
+        "unmapped_predictions": {},
+        "ignored_predictions": 50,
+        "false_positives_per_document": 1.42,
+        "negative_documents": {
+          "count": 0,
+          "with_false_positive": 0,
+          "false_positive_rate": 0.0
+        }
+      },
+      "performance": {
+        "latency_ms": {
+          "p50": 168.8940210151486,
+          "p95": 395.54612264037115,
+          "p99": 483.8818142842527
+        },
+        "documents_per_second": 4.781848409877117,
+        "characters_per_second": 1670.538741990571,
+        "input_tokens_per_second": 399.33216070883805,
+        "input_tokens": 8351,
+        "input_token_definition": "model tokenizer on original text; excludes prompt and repeated windows",
+        "inference_seconds": 20.912415331578813,
+        "end_to_end_seconds": 21.307914457982406,
+        "sampled_peak_rss_bytes": 2905358336,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "cpu_process_percent_one_core": 148.06559941008587
+      }
+    }
+  }
+}

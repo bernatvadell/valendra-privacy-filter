@@ -17,4 +17,6 @@ The initial run stopped at step 8,000 (epoch 0.1954) after three evaluations wit
 
 The continuation started at 2026-11-05 06:22 UTC. Its policy fingerprint is `b49ac0781f90faf2dbdf3c31b32046eb1d3fe531b937ebba3cbce32cabc9ba1c`. At the subsequent snapshot, training had advanced past epoch 0.1966. The original step-6,500 export was preserved separately. The full training logs and checkpoints are not distributed with the source repository.
 
+On 2026-11-05 the user requested stopping this phase and continuing with the mixed OpenPII/Nemotron data. The last complete checkpoint was step 13,500; the best prior checkpoint was step 11,000. See [the mixed warm-start record](mixed-warmstart-run.md).
+
 The data and training results are stored outside version control. Neither the two-step smoke models nor these preliminary training snapshots are validated production models.

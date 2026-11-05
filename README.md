@@ -100,6 +100,15 @@ uv run valendra-privacy-filter train --config configs/train-causal.yaml \
 
 This records `continuation_policy.json`, keeps the original run identity, gives subsequent checkpoints a distinct protocol fingerprint, and resets early-stopping patience while preserving the prior best metric. Future resumes from a continuation checkpoint automatically reuse that policy. Reports from different protocols cannot be compared as equivalent.
 
+When changing datasets, initialize a **new** experiment from an existing trained checkpoint rather than resuming its Trainer state:
+
+```bash
+uv run valendra-privacy-filter train --config configs/train-openpii-nemotron-warmstart.yaml \
+  --initialize-from-checkpoint /path/to/previous-run/checkpoint-13500
+```
+
+The source checkpoint must contain model Safetensors, `config.json` and `trainer_state.json`, with its original `run_identity.json` in the parent directory. The loader checks the Qwen3 base revision, architecture, attention mode and BIOES label order; it rejects missing or unexpected weights and verifies the loaded classifier and backbone tensors. All weights remain trainable. The new phase begins at step zero with fresh FP32 AdamW state and a fresh scheduler, and records source weight/config hashes and a distinct protocol identity. Resume this new phase using its own `--resume-from-checkpoint`, without `--initialize-from-checkpoint`; the original checkpoint is not required for resumption. The mixed validation reuses curated examples from the earlier validation process and is not an untouched final test.
+
 The YAML configurations are starting points, **not validated optimal hyperparameters**. All backbone and head parameters remain trainable. Trainer uses BF16 autocast, FP32 master parameters and FP32 AdamW moments, linear scheduling, warmup, accumulation, clipping, optional gradient checkpointing, periodic evaluation/checkpoints, early stopping, and Safetensors model weights. Early-stopping patience starts only after warmup completes. To prioritize Spain without dropping English examples, the full-run configs sample each `es`/`ES` training window four times per epoch; the exported dataset remains deduplicated and other windows appear once. For practical repeated validation they use a deterministic seed-selected subset of 2,048 validation windows for early stopping. Use the separate evaluation command for complete test and challenge reports. Optimizer/RNG/callback state needed to resume is stored by Trainer alongside those weights; resume only from checkpoints you trust. A run identity binds each output directory to the model revision, dataset manifest, seed, attention mode and training protocol. Resume with the same configuration and directory. Exports live under each run's `final/`.
 
 Both configurations use the same settings except attention mode and output directory. The baseline preserves the native causal mask. The bidirectional subclass passes an explicit 4D padding mask, disables caching and uses tested eager/SDPA backends; it does not merely toggle a config flag. Tests verify future-token influence, causal isolation and padding invariance. The mode is saved in the model config.
@@ -139,6 +148,28 @@ uv run valendra-privacy-filter benchmark --checkpoint experiments/runs/causal/fi
 ```
 
 The report records p50/p95/p99 latency, tokens/s, documents/s, sampled process RSS, peak PyTorch allocated VRAM and CPU time as a percentage of one core, along with device, precision, window and batch settings. It does not report a system-wide peak RSS or GPU reserved memory.
+
+### Compare three privacy models
+
+The local comparison runs Valendra, `openai/privacy-filter` and `nvidia/gliner-PII` sequentially in isolated processes. The OpenAI model and runtime are Apache 2.0; NVIDIA's model is governed by the NVIDIA Open Model License. The first run downloads their pinned public weights. Install the two independent locked environments alongside the main environment:
+
+```bash
+uv sync --locked --extra dev
+uv sync --locked --project benchmarks/openai
+uv sync --locked --project benchmarks/gliner
+```
+
+Use an existing checkpoint and a checksum-verified prepared dataset. The destination must not already exist:
+
+```bash
+.venv/bin/python scripts/run_comparison.py \
+  --checkpoint /path/to/checkpoint --data-dir /path/to/data \
+  --split validation --device cpu --precision fp32 \
+  --limit 100 --sample-seed 42 --warmup 2 \
+  --output-dir experiments/runs/interim-comparison
+```
+
+Each model sees the same deterministic sample of unique documents from the entire split. Omit both `--limit` and `--sample-seed` to evaluate the complete split. Reports record dataset and document-order hashes, runtime settings, strict character-span scores, type-specific results for a common subset, and latency and memory measurements; they do not contain input text. Exact untyped and typed-common scores answer different questions, because model taxonomies and supported categories differ. FP32 is used for Valendra and GLiNER in this example; OpenAI's official runtime uses its native parameter precision. The validation data and any intermediate checkpoint are for development, not an independent final assessment. Synthetic validation data alone does not establish real-world performance.
 
 ## Python and command-line inference
 

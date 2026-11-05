@@ -173,11 +173,12 @@ def smoke_test(output_dir: Path = typer.Option(...), device: str = "cuda", atten
 
 @app.command("train")
 def train(config: Path = typer.Option(..., exists=True), resume_from_checkpoint: Optional[Path] = None,
-          min_early_stopping_epoch: Optional[float] = None):
+          min_early_stopping_epoch: Optional[float] = None, initialize_from_checkpoint: Optional[Path] = None):
     from valendra_privacy_filter.training.train import train as execute
     settings = yaml.safe_load(config.read_text(encoding="utf-8"))
     typer.echo(json.dumps(execute(settings, str(resume_from_checkpoint) if resume_from_checkpoint else None,
-                                  min_early_stopping_epoch=min_early_stopping_epoch), indent=2))
+                                  min_early_stopping_epoch=min_early_stopping_epoch,
+                                  initialize_from_checkpoint=str(initialize_from_checkpoint) if initialize_from_checkpoint else None), indent=2))
 
 
 @app.command("evaluate")
@@ -198,6 +199,20 @@ def compare_experiments(first: Path = typer.Option(..., exists=True), second: Pa
     result = compare_reports(json.loads(first.read_text()), json.loads(second.read_text()))
     _write_json(output, result)
     typer.echo(json.dumps({"output": str(output), "split": result["split"]}))
+
+
+@app.command("compare-baselines")
+def compare_baselines(valendra: Path = typer.Option(..., exists=True), openai: Path = typer.Option(..., exists=True),
+                      gliner: Path = typer.Option(..., exists=True), output: Path = typer.Option(...)):
+    from valendra_privacy_filter.comparison.runner import compare_baseline_reports
+
+    if output.exists() or not output.parent.is_dir():
+        raise typer.BadParameter("Output must be new and its parent directory must exist")
+    reports = [json.loads(path.read_text(encoding="utf-8")) for path in (valendra, openai, gliner)]
+    result = compare_baseline_reports(reports)
+    with output.open("x", encoding="utf-8") as stream:
+        json.dump(result, stream, indent=2, ensure_ascii=False)
+    typer.echo(json.dumps({"split": result["split"], "documents": result["documents"], "report_written": True}))
 
 
 @app.command("calibrate")
