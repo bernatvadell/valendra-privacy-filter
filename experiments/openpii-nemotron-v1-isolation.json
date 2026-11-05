@@ -1,0 +1,14 @@
+{
+  "cross_split_exact_texts": 0,
+  "cross_split_templates": 0,
+  "cross_split_groups": 0,
+  "cross_split_identity_values": 0,
+  "holdout_documents": 95920,
+  "holdout_exact_matches": 0,
+  "holdout_template_matches": 0,
+  "holdout_identity_matches": 0,
+  "holdout_overlap_documents": 0,
+  "passed": true,
+  "dataset_manifest_sha256": "9af56087c7655f676c1cb64d214ed2d9d1a5cac78e09aaaee59abd16cd3a0f18",
+  "holdout_manifest_sha256": "5dee198c287372b826ce8ceb3025ea6d86bbc9775795357dc9b595e61586f413"
+}

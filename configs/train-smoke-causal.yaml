@@ -1,0 +1,15 @@
+dataset_dir: data/processed-smoke
+output_dir: experiments/runs/smoke-causal
+attention_mode: causal
+seed: 42
+train_batch_size: 1
+eval_batch_size: 1
+gradient_accumulation_steps: 1
+max_steps: 2
+learning_rate: 0.00002
+warmup_ratio: 0.0
+gradient_checkpointing: true
+save_steps: 1
+logging_steps: 1
+save_total_limit: 2
+early_stopping_patience: 3

@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools==80.9.0", "wheel==0.45.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "valendra-privacy-filter"
+version = "0.1.0"
+description = "Valendra's research pipeline for Qwen3-based token-level PII detection"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+dependencies = [
+  "torch==2.8.0",
+  "transformers==4.55.4",
+  "datasets==4.0.0",
+  "accelerate==1.10.1",
+  "safetensors==0.6.2",
+  "pyarrow==21.0.0",
+  "numpy==2.2.6",
+  "PyYAML==6.0.2",
+  "Faker==37.5.3",
+  "fastapi==0.116.1",
+  "uvicorn==0.35.0",
+  "pydantic==2.11.7",
+  "psutil==7.0.0",
+  "typer==0.16.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==8.4.1", "httpx==0.28.1"]
+
+[project.urls]
+Homepage = "https://github.com/valendra-tech/valendra-privacy-filter"
+Repository = "https://github.com/valendra-tech/valendra-privacy-filter"
+
+[project.scripts]
+valendra-privacy-filter = "valendra_privacy_filter.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+valendra_privacy_filter = ["resources/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: requires network and the official checkpoint", "gpu: requires a BF16-capable CUDA GPU"]

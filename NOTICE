@@ -1,0 +1,15 @@
+Valendra Privacy Filter
+
+This project uses Qwen/Qwen3-0.6B-Base, distributed by the Qwen team under
+the Apache License 2.0: https://huggingface.co/Qwen/Qwen3-0.6B-Base
+
+Prepared datasets may contain or be derived from:
+
+- OpenPII 1M, by Ai4Privacy / Ai Suisse SA, licensed CC BY 4.0:
+  https://huggingface.co/datasets/ai4privacy/pii-masking-openpii-1m
+- Nemotron-PII, by NVIDIA Corporation, licensed CC BY 4.0:
+  https://huggingface.co/datasets/nvidia/Nemotron-PII
+
+Dataset licenses and attribution requirements apply independently of this
+project's Apache 2.0 code license. See the README for source revisions and
+additional provenance.
