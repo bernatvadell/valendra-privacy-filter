@@ -3,7 +3,8 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from valendra_privacy_filter.inference.detector import (Detector, _reconcile_adjacent_secret_fragments,
+from valendra_privacy_filter.inference.detector import (Detector, _extend_secrets_to_whitespace_runs,
+                                                        _reconcile_adjacent_secret_fragments,
                                                         decode_spans, redact_text)
 from valendra_privacy_filter.labels import label_names
 from valendra_privacy_filter.models.decode import viterbi_decode
@@ -125,12 +126,78 @@ def test_detector_reconciles_an_alphanumeric_unicode_word_without_moving_offsets
     assert detector.redact(text) == "💬[SECRET]!"
 
 
-@pytest.mark.parametrize("text", ["Ab 12", "Ab-12", "xAb12", "Ab12x"])
-def test_detector_does_not_merge_separate_or_incomplete_words(text):
+def test_detector_does_not_merge_separate_words():
     detector = Detector(FragmentedWordModel(), CharacterTokenizer())
+    assert [(item["type"], item["value"]) for item in detector.detect("Ab 12")["entities"]] == [
+        ("PERSON", "Ab"), ("SECRET", "12")
+    ]
+
+
+@pytest.mark.parametrize("text", ["Ab-12", "xAb12", "Ab12x"])
+def test_detector_extends_fragments_to_the_whitespace_run_when_secret_scores_higher(text):
+    detector = Detector(FragmentedWordModel(), CharacterTokenizer())
+    assert [(item["type"], item["value"]) for item in detector.detect(text)["entities"]] == [("SECRET", text)]
+
+
+@pytest.mark.parametrize("text", ["Ab-12", "xAb12", "Ab12x"])
+def test_detector_keeps_run_fragments_when_another_category_scores_higher(text):
+    detector = Detector(FragmentedWordModel(prefer_person=True), CharacterTokenizer())
     assert [(item["type"], item["value"]) for item in detector.detect(text)["entities"]] == [
         ("PERSON", "Ab"), ("SECRET", "12")
     ]
+
+
+class SecretTailModel(torch.nn.Module):
+    """Digits are clearly SECRET; other characters lean towards O by ``prefix_margin``."""
+
+    def __init__(self, prefix_margin):
+        super().__init__()
+        self.anchor = torch.nn.Parameter(torch.zeros(()))
+        self.names = label_names()
+        self.config = SimpleNamespace(id2label=dict(enumerate(self.names)))
+        self.prefix_margin = prefix_margin
+
+    def forward(self, input_ids, attention_mask):
+        scores = torch.full((*input_ids.shape, len(self.names)), -12.0, device=input_ids.device)
+        scores[:, :, 0] = 6.0
+        for label in ("B-SECRET", "I-SECRET", "E-SECRET"):
+            scores[:, :, self.names.index(label)] = 6.0 - self.prefix_margin
+        digits = (input_ids >= ord("0")) & (input_ids <= ord("9"))
+        scores[:, :, 0][digits] = -12.0
+        for label in ("B-SECRET", "I-SECRET", "E-SECRET"):
+            scores[:, :, self.names.index(label)][digits] = 8.0
+        return SimpleNamespace(logits=scores)
+
+
+@pytest.mark.parametrize("text, value, redacted", [
+    ("token ghp_12 ok", "ghp_12", "token [SECRET] ok"),
+    ("clave Avalon_2026$", "Avalon_2026$", "clave [SECRET]"),
+    ('usa "key#12", gracias', "key#12", 'usa "[SECRET]", gracias'),
+])
+def test_detector_absorbs_weak_outside_tokens_of_a_secret_run(text, value, redacted):
+    detector = Detector(SecretTailModel(prefix_margin=1.0), CharacterTokenizer())
+    entities = detector.detect(text)["entities"]
+    assert [(item["type"], item["value"], text[item["start"]:item["end"]]) for item in entities] == [
+        ("SECRET", value, value)
+    ]
+    assert detector.redact(text) == redacted
+
+
+def test_detector_does_not_absorb_tokens_the_model_clearly_reads_as_outside():
+    detector = Detector(SecretTailModel(prefix_margin=10.0), CharacterTokenizer())
+    assert [(item["type"], item["value"]) for item in detector.detect("id execution-12 ok")["entities"]] == [
+        ("SECRET", "12")
+    ]
+
+
+def test_secret_runs_reject_out_of_bounds_token_offsets():
+    text = "ab12"
+    model = SecretTailModel(prefix_margin=1.0)
+    tokens = torch.tensor([[ord(char) for char in text]])
+    logits = model(tokens, torch.ones_like(tokens)).logits[0]
+    entities = [{"type": "SECRET", "start": 2, "end": 4, "value": "12", "score": 0.9}]
+    offsets = [(0, 1), (1, 2), (2, 3), (3, 5)]
+    assert _extend_secrets_to_whitespace_runs(text, offsets, logits, model.names, entities) == entities
 
 
 def test_detector_keeps_fragments_when_another_joint_category_scores_higher():

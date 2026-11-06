@@ -117,6 +117,81 @@ def _reconcile_adjacent_secret_fragments(text, offsets, logits, names, entities)
     return result
 
 
+_RUN_OPENING = "\"'«“‘([{<"
+_RUN_CLOSING = "\"'»”’)]}>.,;:"
+
+
+def _whitespace_run(text, start, end):
+    """The whitespace-delimited run around a span, without wrapping quotes/brackets or trailing punctuation."""
+    while start > 0 and not text[start - 1].isspace():
+        start -= 1
+    while end < len(text) and not text[end].isspace():
+        end += 1
+    while start < end and text[start] in _RUN_OPENING:
+        start += 1
+    while end > start and text[end - 1] in _RUN_CLOSING:
+        end -= 1
+    return start, end
+
+
+def _extend_secrets_to_whitespace_runs(text, offsets, logits, names, entities):
+    """Grow a SECRET fragment to its whitespace-delimited run when the model prefers that reading.
+
+    Credentials often contain symbols (``Barca1983#``, ``ghp_…``, ``Avalon_2026$``) and the model may tag only part
+    of them, leaving the rest as ``O``. The whole run is scored as a single SECRET and replaces the fragments only when
+    that path scores strictly higher than reading every token as ``O`` and than each other category found in the run.
+    """
+    if not any(entity["type"] == "SECRET" for entity in entities):
+        return entities
+    if logits.ndim != 2 or logits.shape != (len(offsets), len(names)):
+        return entities
+    for offset in offsets:
+        if (not isinstance(offset, (tuple, list)) or len(offset) != 2
+                or any(type(value) is not int for value in offset)
+                or not 0 <= offset[0] <= offset[1] <= len(text)):
+            return entities
+    label_ids = {name: index for index, name in enumerate(names)}
+    if "O" not in label_ids:
+        return entities
+    log_probabilities = torch.log_softmax(logits, dim=-1)
+    runs = {}
+    for entity in entities:
+        if entity["type"] != "SECRET":
+            continue
+        start, end = _whitespace_run(text, entity["start"], entity["end"])
+        if (start, end) in runs or (start, end) == (entity["start"], entity["end"]):
+            continue
+        if start > entity["start"] or end < entity["end"]:
+            continue
+        overlapping = [item for item in entities if item["start"] < end and item["end"] > start]
+        if any(item["start"] < start or item["end"] > end for item in overlapping):
+            continue
+        indices = [index for index, (a, b) in enumerate(offsets) if a < end and b > start]
+        if not indices or indices != list(range(indices[0], indices[-1] + 1)):
+            continue
+        if (any(not char.isspace() for char in text[offsets[indices[0]][0]:start])
+                or any(not char.isspace() for char in text[end:offsets[indices[-1]][1]])):
+            continue
+        prefixes = ["S"] if len(indices) == 1 else ["B"] + ["I"] * (len(indices) - 2) + ["E"]
+        categories = {item["type"] for item in overlapping}
+        if not all(f"{prefix}-{category}" in label_ids for category in categories for prefix in prefixes):
+            continue
+        scores = {category: sum(float(log_probabilities[i, label_ids[f"{prefix}-{category}"]])
+                                for i, prefix in zip(indices, prefixes))
+                  for category in categories}
+        outside = sum(float(log_probabilities[i, label_ids["O"]]) for i in indices)
+        secret = scores["SECRET"]
+        if (math.isfinite(secret) and secret > outside
+                and all(secret > score for category, score in scores.items() if category != "SECRET")):
+            runs[(start, end)] = math.exp(secret / len(indices))
+    if not runs:
+        return entities
+    kept = [item for item in entities if not any(item["start"] < end and item["end"] > start for start, end in runs)]
+    grown = [{"type": "SECRET", "start": start, "end": end, "value": text[start:end], "score": score}
+             for (start, end), score in runs.items()]
+    return sorted(kept + grown, key=lambda item: (item["start"], item["end"]))
+
+
 def redact_text(text, entities):
     result = text
     last_start = len(text)
@@ -181,7 +256,8 @@ class Detector:
         tags = viterbi_decode(logits, self.names)
         probabilities = torch.softmax(logits, dim=-1).gather(1, torch.tensor(tags)[:, None]).squeeze(1).tolist()
         entities = decode_spans(text, offsets, tags, self.names, probabilities)
-        return {"entities": _reconcile_adjacent_secret_fragments(text, offsets, logits, self.names, entities)}
+        entities = _reconcile_adjacent_secret_fragments(text, offsets, logits, self.names, entities)
+        return {"entities": _extend_secrets_to_whitespace_runs(text, offsets, logits, self.names, entities)}
 
     def redact(self, text):
         return redact_text(text, self.detect(text)["entities"])
