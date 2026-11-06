@@ -1,6 +1,7 @@
 """Windowed classification and redaction in original Unicode coordinates."""
 
 import math
+import unicodedata
 
 import torch
 from transformers import AutoTokenizer
@@ -51,6 +52,69 @@ def decode_spans(text, offsets, tags, names, probabilities):
         if not any(entity["start"] < prior["end"] and prior["start"] < entity["end"] for prior in selected):
             selected.append(entity)
     return sorted(selected, key=lambda e: (e["start"], e["end"]))
+
+
+def _word_character(char):
+    return char.isalnum() or char == "_" or unicodedata.category(char).startswith("M")
+
+
+def _reconcile_adjacent_secret_fragments(text, offsets, logits, names, entities):
+    """Re-score a fully detected word split into adjacent entity fragments."""
+    if len(entities) < 2 or not any(entity["type"] == "SECRET" for entity in entities):
+        return entities
+    if logits.ndim != 2 or logits.shape != (len(offsets), len(names)):
+        return entities
+    for offset in offsets:
+        if (not isinstance(offset, (tuple, list)) or len(offset) != 2
+                or any(type(value) is not int for value in offset)
+                or not 0 <= offset[0] <= offset[1] <= len(text)):
+            return entities
+    label_ids = {name: index for index, name in enumerate(names)}
+    result = []
+    position = 0
+    while position < len(entities):
+        end_position = position + 1
+        while end_position < len(entities):
+            left, right = entities[end_position - 1], entities[end_position]
+            boundary = left["end"]
+            if (boundary != right["start"] or not 0 < boundary < len(text)
+                    or not _word_character(text[boundary - 1]) or not _word_character(text[boundary])):
+                break
+            end_position += 1
+        group = entities[position:end_position]
+        start, end = group[0]["start"], group[-1]["end"]
+        categories = {entity["type"] for entity in group}
+        whole_word = (all(_word_character(char) for char in text[start:end])
+                      and (start == 0 or not _word_character(text[start - 1]))
+                      and (end == len(text) or not _word_character(text[end])))
+        if len(group) > 1 and "SECRET" in categories and whole_word:
+            indices = [index for index, (a, b) in enumerate(offsets) if a < end and b > start]
+        else:
+            indices = []
+        if indices:
+            first_start = offsets[indices[0]][0]
+            last_end = offsets[indices[-1]][1]
+            aligned = (indices == list(range(indices[0], indices[-1] + 1))
+                       and all(type(offsets[i][0]) is int and type(offsets[i][1]) is int
+                               and 0 <= offsets[i][0] < offsets[i][1] <= len(text) for i in indices)
+                       and first_start <= start and last_end >= end
+                       and not any(not char.isspace() for char in text[first_start:start])
+                       and not any(not char.isspace() for char in text[end:last_end]))
+            prefixes = (["S"] if len(indices) == 1 else ["B"] + ["I"] * (len(indices) - 2) + ["E"])
+            if aligned and all(f"{prefix}-{category}" in label_ids for category in categories for prefix in prefixes):
+                log_probabilities = torch.log_softmax(logits[indices], dim=-1)
+                scores = {category: sum(float(log_probabilities[i, label_ids[f"{prefix}-{category}"]])
+                                        for i, prefix in enumerate(prefixes))
+                          for category in categories}
+                if (all(math.isfinite(score) for score in scores.values())
+                        and all(scores["SECRET"] > score for category, score in scores.items() if category != "SECRET")):
+                    result.append({"type": "SECRET", "start": start, "end": end, "value": text[start:end],
+                                   "score": math.exp(scores["SECRET"] / len(indices))})
+                    position = end_position
+                    continue
+        result.extend(group)
+        position = end_position
+    return result
 
 
 def redact_text(text, entities):
@@ -116,7 +180,8 @@ class Detector:
         logits = totals / counts / self.temperature
         tags = viterbi_decode(logits, self.names)
         probabilities = torch.softmax(logits, dim=-1).gather(1, torch.tensor(tags)[:, None]).squeeze(1).tolist()
-        return {"entities": decode_spans(text, offsets, tags, self.names, probabilities)}
+        entities = decode_spans(text, offsets, tags, self.names, probabilities)
+        return {"entities": _reconcile_adjacent_secret_fragments(text, offsets, logits, self.names, entities)}
 
     def redact(self, text):
         return redact_text(text, self.detect(text)["entities"])

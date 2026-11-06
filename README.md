@@ -2,7 +2,9 @@
 
 A research pipeline for detecting and redacting PII with token classification, not text generation. It uses the complete [`Qwen/Qwen3-0.6B-Base`](https://huggingface.co/Qwen/Qwen3-0.6B-Base) backbone, a trainable BIOES head, BF16 mixed-precision full fine-tuning, and exact character-span evaluation. Causal Qwen3 is the baseline; full bidirectional attention is a separate experiment.
 
-**Status:** the pipeline, including both attention modes, has been exercised on a GPU using very small smoke datasets. No useful trained privacy model or evidence of real-world generalization is included. See [measured smoke results](experiments/smoke-results.md) before interpreting any numbers.
+**Open weights:** the research checkpoint, tokenizer, model card and full aggregate evaluation reports are available at [valendra/privacy-filter-mini](https://huggingface.co/valendra/privacy-filter-mini) under Apache 2.0. Model weights are not stored in this code repository.
+
+**Status:** the pipeline, including both attention modes, has been exercised on a GPU using very small smoke datasets. The released checkpoint is experimental, and no evidence of real-world generalization is included. See [measured smoke results](experiments/smoke-results.md) before interpreting any numbers.
 
 ## Preliminary comparison
 
@@ -198,7 +200,7 @@ result = detector.detect("Soy Ana García y mi correo es ana@example.com")
 redacted = detector.redact("Soy Ana García y mi correo es ana@example.com")
 ```
 
-`detect` returns an `entities` list containing `type`, `start`, `end`, `value` and `score` for each span. Offsets are half-open Python Unicode code-point indices into the original string; `text[start:end] == value`. Long documents are tokenized once, window logits are averaged at shared token positions, and a single global Viterbi path is decoded. Overlapping reconstructed intervals are resolved by confidence with deterministic tie-breaking. Redaction replaces spans from right to left and preserves all other content.
+`detect` returns an `entities` list containing `type`, `start`, `end`, `value` and `score` for each span. Offsets are half-open Python Unicode code-point indices into the original string; `text[start:end] == value`. Long documents are tokenized once, window logits are averaged at shared token positions, and a single global Viterbi path is decoded. Overlapping reconstructed intervals are resolved by confidence with deterministic tie-breaking. When adjacent detected fragments cover a complete uninterrupted word and at least one is `SECRET`, the complete word is scored as each fragment category; it is reconciled into a single `SECRET` only when that full-span path scores strictly higher than the other fragment categories. The merged score is the geometric mean of its actual SECRET tag probabilities and remains uncalibrated. Published comparisons using the earlier decoder do not include this reconciliation. Redaction replaces spans from right to left and preserves all other content.
 
 Use stdin or a UTF-8 file to avoid putting text in command arguments:
 
