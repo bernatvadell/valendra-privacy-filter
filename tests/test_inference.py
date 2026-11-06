@@ -1,8 +1,10 @@
 from types import SimpleNamespace
 
+import pytest
 import torch
 
-from valendra_privacy_filter.inference.detector import Detector, decode_spans, redact_text
+from valendra_privacy_filter.inference.detector import (Detector, _reconcile_adjacent_secret_fragments,
+                                                        decode_spans, redact_text)
 from valendra_privacy_filter.labels import label_names
 from valendra_privacy_filter.models.decode import viterbi_decode
 
@@ -63,3 +65,140 @@ def test_detector_merges_overlapping_windows_and_redacts():
         ("PERSON", 4, 7, "Ada")
     ]
     assert detector.redact(text) == "💬Hi [PERSON]!"
+
+
+class FragmentedWordModel(torch.nn.Module):
+    def __init__(self, *, prefer_person=False, second_type="SECRET"):
+        super().__init__()
+        self.anchor = torch.nn.Parameter(torch.zeros(()))
+        self.names = label_names()
+        self.config = SimpleNamespace(id2label=dict(enumerate(self.names)))
+        self.prefer_person = prefer_person
+        self.second_type = second_type
+
+    def forward(self, input_ids, attention_mask):
+        scores = torch.full((*input_ids.shape, len(self.names)), -12.0, device=input_ids.device)
+        scores[:, :, 0] = 8.0
+        assignments = {
+            "A": {"B-PERSON": 8, "B-SECRET": -2 if self.prefer_person else 7},
+            "Á": {"B-PERSON": 8, "B-SECRET": -2 if self.prefer_person else 7},
+            "b": {"E-PERSON": 8, "I-SECRET": -2 if self.prefer_person else 6, "I-PERSON": 7 if self.prefer_person else -12},
+            "1": {f"B-{self.second_type}": 8, "I-SECRET": -2 if self.prefer_person else 7, "I-PERSON": 7 if self.prefer_person else -12},
+            "2": {f"E-{self.second_type}": 8, "E-PERSON": 7 if self.prefer_person else -12},
+        }
+        for char, labels in assignments.items():
+            selected = input_ids == ord(char)
+            scores[:, :, 0][selected] = -12.0
+            for label, value in labels.items():
+                scores[:, :, self.names.index(label)][selected] = value
+        return SimpleNamespace(logits=scores)
+
+
+def test_detector_reconciles_mixed_fragments_using_the_joint_secret_score():
+    model = FragmentedWordModel()
+    detector = Detector(model, CharacterTokenizer())
+    text = "Ab12"
+    token_ids = torch.tensor([[ord(char) for char in text]])
+    logits = model(token_ids, torch.ones_like(token_ids)).logits[0]
+    assert [model.names[i] for i in viterbi_decode(logits, model.names)] == [
+        "B-PERSON", "E-PERSON", "B-SECRET", "E-SECRET"
+    ]
+    secret_path = [model.names.index(label) for label in ("B-SECRET", "I-SECRET", "I-SECRET", "E-SECRET")]
+    log_probabilities = torch.log_softmax(logits, dim=-1)
+    expected_score = torch.exp(torch.stack([log_probabilities[i, tag] for i, tag in enumerate(secret_path)]).mean()).item()
+
+    result = detector.detect(text)["entities"]
+    assert [(item["type"], item["start"], item["end"], item["value"]) for item in result] == [
+        ("SECRET", 0, 4, text)
+    ]
+    assert result[0]["score"] == pytest.approx(expected_score)
+    assert detector.redact(text) == "[SECRET]"
+
+
+def test_detector_reconciles_an_alphanumeric_unicode_word_without_moving_offsets():
+    detector = Detector(FragmentedWordModel(), CharacterTokenizer())
+    text = "💬Áb12!"
+    entities = detector.detect(text)["entities"]
+    assert [(item["type"], item["start"], item["end"], item["value"]) for item in entities] == [
+        ("SECRET", 1, 5, "Áb12")
+    ]
+    assert detector.redact(text) == "💬[SECRET]!"
+
+
+@pytest.mark.parametrize("text", ["Ab 12", "Ab-12", "xAb12", "Ab12x"])
+def test_detector_does_not_merge_separate_or_incomplete_words(text):
+    detector = Detector(FragmentedWordModel(), CharacterTokenizer())
+    assert [(item["type"], item["value"]) for item in detector.detect(text)["entities"]] == [
+        ("PERSON", "Ab"), ("SECRET", "12")
+    ]
+
+
+def test_detector_keeps_fragments_when_another_joint_category_scores_higher():
+    detector = Detector(FragmentedWordModel(prefer_person=True), CharacterTokenizer())
+    assert [(item["type"], item["value"]) for item in detector.detect("Ab12")["entities"]] == [
+        ("PERSON", "Ab"), ("SECRET", "12")
+    ]
+
+
+def test_detector_does_not_merge_adjacent_fragments_without_a_secret():
+    detector = Detector(FragmentedWordModel(second_type="EMAIL"), CharacterTokenizer())
+    assert [(item["type"], item["value"]) for item in detector.detect("Ab12")["entities"]] == [
+        ("PERSON", "Ab"), ("EMAIL", "12")
+    ]
+
+
+def test_secret_reconciliation_rejects_out_of_bounds_token_offsets():
+    text = "Ab12"
+    model = FragmentedWordModel()
+    tokens = torch.tensor([[ord(char) for char in text]])
+    logits = model(tokens, torch.ones_like(tokens)).logits[0]
+    entities = [{"type": "PERSON", "start": 0, "end": 2, "value": "Ab", "score": 0.9},
+                {"type": "SECRET", "start": 2, "end": 4, "value": "12", "score": 0.9}]
+    offsets = [(0, 1), (1, 2), (2, 3), (3, 5)]
+    assert _reconcile_adjacent_secret_fragments(text, offsets, logits, model.names, entities) == entities
+
+
+def test_secret_reconciliation_keeps_fragments_when_candidate_scores_tie():
+    text = "Ab12"
+    names = label_names()
+    logits = torch.zeros((4, len(names)))
+    offsets = [(0, 1), (1, 2), (2, 3), (3, 4)]
+    entities = [{"type": "PERSON", "start": 0, "end": 2, "value": "Ab", "score": 0.9},
+                {"type": "SECRET", "start": 2, "end": 4, "value": "12", "score": 0.9}]
+    assert _reconcile_adjacent_secret_fragments(text, offsets, logits, names, entities) == entities
+
+
+def test_secret_reconciliation_accepts_leading_space_in_a_token_offset():
+    text = " Ab12!"
+    model = FragmentedWordModel()
+    tokens = torch.tensor([[ord(char) for char in "Ab12"]])
+    logits = model(tokens, torch.ones_like(tokens)).logits[0]
+    offsets = [(0, 2), (2, 3), (3, 4), (4, 5)]
+    entities = [{"type": "PERSON", "start": 1, "end": 3, "value": "Ab", "score": 0.9},
+                {"type": "SECRET", "start": 3, "end": 5, "value": "12", "score": 0.9}]
+    result = _reconcile_adjacent_secret_fragments(text, offsets, logits, model.names, entities)
+    assert [(item["type"], item["start"], item["end"], item["value"]) for item in result] == [
+        ("SECRET", 1, 5, "Ab12")
+    ]
+
+
+def test_secret_reconciliation_rejects_token_offsets_including_punctuation():
+    text = "Ab12!"
+    model = FragmentedWordModel()
+    tokens = torch.tensor([[ord(char) for char in "Ab12"]])
+    logits = model(tokens, torch.ones_like(tokens)).logits[0]
+    offsets = [(0, 1), (1, 2), (2, 3), (3, 5)]
+    entities = [{"type": "PERSON", "start": 0, "end": 2, "value": "Ab", "score": 0.9},
+                {"type": "SECRET", "start": 2, "end": 4, "value": "12", "score": 0.9}]
+    assert _reconcile_adjacent_secret_fragments(text, offsets, logits, model.names, entities) == entities
+
+
+def test_secret_reconciliation_skips_noninteger_token_offsets():
+    text = "Ab12"
+    model = FragmentedWordModel()
+    tokens = torch.tensor([[ord(char) for char in text]])
+    logits = model(tokens, torch.ones_like(tokens)).logits[0]
+    offsets = [(0, 1), (1, 2), ("2", 3), (3, 4)]
+    entities = [{"type": "PERSON", "start": 0, "end": 2, "value": "Ab", "score": 0.9},
+                {"type": "SECRET", "start": 2, "end": 4, "value": "12", "score": 0.9}]
+    assert _reconcile_adjacent_secret_fragments(text, offsets, logits, model.names, entities) == entities
